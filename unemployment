@@ -1,0 +1,66 @@
+#  Import libraries
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+#  Load and clean the data
+df = pd.read_csv(r"C:\Users\likki\OneDrive\Desktop\html\unemployment.csv")  # Adjust path if needed
+df.dropna(inplace=True)
+
+#  Standardize column names
+df.columns = [col.strip().replace(" ", "_") for col in df.columns]
+
+#  Parse dates
+df['Date'] = pd.to_datetime(df['Date'], errors='coerce', dayfirst=True)
+df = df[df['Date'].notnull()]  # Remove rows with invalid dates
+
+#  Basic overview
+print(df.info())
+
+#  Unemployment trend over time (national average)
+monthly_avg = df.groupby('Date')['Estimated_Unemployment_Rate_(%)'].mean()
+plt.figure(figsize=(12,6))
+monthly_avg.plot()
+plt.title("National Average Unemployment Rate Over Time")
+plt.ylabel("Unemployment Rate (%)")
+plt.grid(True)
+plt.show()
+
+# COVID-19 impact (highlighting 2020 lockdown)
+covid_period = df[(df['Date'] >= '2020-03-01') & (df['Date'] <= '2020-06-30')]
+plt.figure(figsize=(12,6))
+sns.lineplot(data=covid_period, x='Date', y='Estimated_Unemployment_Rate_(%)', hue='Region')
+plt.title("Unemployment Rate During COVID-19 Lockdown (Mar–Jun 2020)")
+plt.ylabel("Unemployment Rate (%)")
+plt.xticks(rotation=45)
+plt.legend([],[], frameon=False)
+plt.show()
+
+#  Seasonal trends (monthly averages)
+df['Month'] = df['Date'].dt.month
+monthly_trend = df.groupby('Month')['Estimated_Unemployment_Rate_(%)'].mean()
+plt.figure(figsize=(10,5))
+monthly_trend.plot(kind='bar', color='skyblue')
+plt.title("Average Unemployment Rate by Month")
+plt.xlabel("Month")
+plt.ylabel("Unemployment Rate (%)")
+plt.grid(axis='y')
+plt.show()
+
+#  Rural vs Urban comparison
+area_avg = df.groupby(['Date', 'Area'])['Estimated_Unemployment_Rate_(%)'].mean().unstack()
+area_avg.plot(figsize=(12,6))
+plt.title("Rural vs Urban Unemployment Rate Over Time")
+plt.ylabel("Unemployment Rate (%)")
+plt.grid(True)
+plt.show()
+
+#  Latest unemployment by region
+latest_date = df['Date'].max()
+latest_data = df[df['Date'] == latest_date]
+plt.figure(figsize=(14,6))
+sns.barplot(data=latest_data, x='Region', y='Estimated_Unemployment_Rate_(%)', hue='Area')
+plt.title(f"Unemployment Rate by Region on {latest_date.date()}")
+plt.xticks(rotation=90)
+plt.ylabel("Unemployment Rate (%)")
+plt.show()
